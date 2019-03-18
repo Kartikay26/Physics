@@ -1,62 +1,62 @@
-#ifndef PHYSICS_LIBRARY_H
-#define PHYSICS_LIBRARY_H
+#ifndef PHYSICS_H
+#define PHYSICS_H
 
-#include "vec3.h"
-#include <iostream>
+#include <string>
 #include <vector>
 
-using std::vector, std::ostream;
+#include "math3d.h"
 
 class Universe;
-
-class Object;
-
+class Particle;
 class Force;
+class Spring;
 
-class Universe {
-    vector<Force *> forces;
-    vector<Object *> objects;
-public:
-    double time = 0.000;
-    double timestep = 0.001;
+class Universe
+{
+  private:
+    std::vector<Force *> forces;
+    std::vector<Particle *> particles;
+    std::vector<Spring *> springs;
 
-    void addObject(Object *o);
-
-    void addForce(Force *f);
-
+  public:
+    db time = 0;
+    int steps = 0;
+    db dt;
+    Universe(db timestep = 1e-3);
+    void add(Force *f);
+    void add(Particle *p);
+    void add(Spring *s);
     void step();
-
-    vec3 getForce(Object &p);
+    std::string info();
+    vec3d total_force(Particle *p);
+    std::string toJson();
 };
 
-class Object {
-public:
-    Universe *univ = nullptr;
-
-    friend void Universe::addObject(Object *);
-
-    virtual ostream &operator<<(ostream &) = 0;
+class Particle
+{
+    friend class Universe;
+  private:
+    vec3d _new_pos, _new_vel;
+  public:
+    db mass;
+    vec3d pos;
+    vec3d vel;
+    Particle(vec3d pos, vec3d vel = vec3d(0, 0, 0), db mass = 1);
+    std::string toJson();
 };
 
-class Force {
-public:
-    virtual vec3 calculateFor(Object &o) = 0;
+class Force
+{
+  public:
+    virtual vec3d get_force(Particle *p) = 0;
 };
 
-class Particle : public Object {
-public:
-    vec3 pos;
-
-    Particle(vec3 pos, vec3 vel, double mass);
-
-    ostream &operator<<(ostream &) override;
-
-    double mass;
-    vec3 vel;
-};
-
-class GravityForce : public Force {
-    vec3 calculateFor(Object &o) override;
+class GravityForce : public Force
+{
+  public:
+    vec3d g;
+    GravityForce(vec3d g = vec3d(0, 0, -1));
+    vec3d get_force(Particle *p) override;
 };
 
 #endif
